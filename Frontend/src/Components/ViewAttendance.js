@@ -49,11 +49,11 @@ const ViewAttendance = ({ mode, showalert }) => {
   const getTranslucentColor = (color) => {
     switch (color) {
       case "green":
-        return "rgba(0,128,0,0.3)";
+        return "rgba(0,128,0,0.5)";
       case "yellow":
-        return "rgba(255,255,0,0.3)";
+        return "rgba(255,255,0,0.5)";
       case "red":
-        return "rgba(255,0,0,0.3)";
+        return "rgba(255,0,0,0.5)";
       default:
         return "transparent";
     }
@@ -130,7 +130,7 @@ const ViewAttendance = ({ mode, showalert }) => {
             </div>
             {/* Expanded Records Table */}
             {isExpanded && (
-              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px" }}>
+              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px", color: mode === "dark" ? "white" : "black" }}>
                 <table className="table table-sm table-bordered">
                   <thead>
                     <tr>
@@ -149,7 +149,7 @@ const ViewAttendance = ({ mode, showalert }) => {
                         <td>
                           <i
                             className="fa-regular fa-pen-to-square mx-2"
-                            style={{ cursor: "pointer" }}
+                            style={{ cursor: "pointer", color: mode === "dark" ? "white" : "black" }}
                             onClick={() => handleEditClick(record)}
                           ></i>
                           <i
