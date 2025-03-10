@@ -96,7 +96,7 @@ const ViewAttendance = ({ mode, showalert }) => {
     <div className={containerClass}>
       <h2>Attendance Records</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-      
+
       {/* Render grouped records with expandable raw records */}
       {Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
         const total = subjectRecords.length;
@@ -131,12 +131,12 @@ const ViewAttendance = ({ mode, showalert }) => {
             {/* Expanded Records Table */}
             {isExpanded && (
               <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px", color: mode === "dark" ? "white" : "black" }}>
-                <table className="table table-sm table-bordered">
+                <table className="table table-sm table-bordered" style={{ color: mode === "dark" ? "white" : "black" }}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th style={{ color: titleColor }}>Date</th>
+                      <th style={{ color: titleColor }}>Status</th>
+                      <th style={{ color: titleColor }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -167,7 +167,7 @@ const ViewAttendance = ({ mode, showalert }) => {
           </div>
         );
       })}
-      
+
       <hr />
       <h3>Attendance Summary</h3>
       <AttendancePieCharts attendanceRecords={records} mode={mode} />
@@ -182,9 +182,9 @@ const ViewAttendance = ({ mode, showalert }) => {
             setSelectedAttendance(null);
           }}
           attendanceRecord={selectedAttendance}
-          onSave={() => {}}
+          onSave={() => { }}
           mode={mode}
-        />      
+        />
       )}
     </div>
   );
