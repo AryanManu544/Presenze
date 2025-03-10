@@ -8,7 +8,7 @@ const ViewAttendance = ({ mode, showalert }) => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
-  const [showRawRecords, setShowRawRecords] = useState(true);
+  const [expandedSubjects, setExpandedSubjects] = useState({}); // tracks which subject is expanded
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
@@ -59,40 +59,37 @@ const ViewAttendance = ({ mode, showalert }) => {
     }
   };
 
-  // Handle editing a subject group
-  // For example, open the modal with the first record from the group
-  const handleEditSubject = (subject) => {
-    const subjectRecords = groupedRecords[subject];
-    if (subjectRecords && subjectRecords.length > 0) {
-      setSelectedAttendance(subjectRecords[0]);
-      setShowModal(true);
-    }
+  // Toggle subject expansion
+  const toggleSubjectExpand = (subject) => {
+    setExpandedSubjects((prev) => ({
+      ...prev,
+      [subject]: !prev[subject]
+    }));
   };
 
-  // Handle deleting a subject group.
-  // Adjust this logic based on your API: here we assume an endpoint exists to delete all records for a subject.
-  const handleDeleteSubject = async (subject) => {
+  // Individual record edit handler
+  const handleEditClick = (record) => {
+    setSelectedAttendance(record);
+    setShowModal(true);
+  };
+
+  // Individual record delete handler
+  const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      // Example API endpoint to delete all records for a subject
-      await axios.delete(`${API_BASE_URL}/api/attendance/deleteSubject/${subject}`, {
+      await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
         headers: { "auth-token": token }
       });
-      // Remove records for this subject from state
-      setRecords(records.filter(record => record.className !== subject));
-      showalert(`Deleted all records for ${subject}`, "success");
+      setRecords(records.filter(r => r._id !== id));
+      showalert("Record deleted", "success");
     } catch (err) {
       console.error(err);
-      showalert("Error deleting subject records", "danger");
+      showalert("Error deleting record", "danger");
     }
-  };
-
-  const toggleRawRecords = () => {
-    setShowRawRecords(!showRawRecords);
   };
 
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
-  //const borderColor = mode === "dark" ? "white" : "black";
+  const borderColor = mode === "dark" ? "white" : "black";
   const titleColor = mode === "dark" ? "white" : "black";
 
   return (
@@ -100,51 +97,76 @@ const ViewAttendance = ({ mode, showalert }) => {
       <h2>Attendance Records</h2>
       {error && <div className="alert alert-danger">{error}</div>}
       
-      {/* Toggle Raw Records Button */}
-      <button className="btn btn-outline-info mb-3" onClick={toggleRawRecords}>
-        {showRawRecords ? "Hide Subjects List" : "Show Subjects List"}
-      </button>
-      
-      {showRawRecords && (
-        // Render grouped records with translucent background, colored borders, and icons
-        Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
-          const total = subjectRecords.length;
-          const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
-          const percentage = (presentCount / total) * 100;
-          const attColor = getAttendanceColor(percentage);
-          const bgColor = getTranslucentColor(attColor);
+      {/* Render grouped records with expandable raw records */}
+      {Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
+        const total = subjectRecords.length;
+        const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
+        const percentage = (presentCount / total) * 100;
+        const attColor = getAttendanceColor(percentage);
+        const bgColor = getTranslucentColor(attColor);
+        const isExpanded = expandedSubjects[subject];
 
-          return (
+        return (
+          <div key={subject} style={{ marginBottom: "10px" }}>
+            {/* Subject Header (clickable to expand/collapse) */}
             <div
-              key={subject}
               style={{
                 backgroundColor: bgColor,
-                border: `2px solid ${attColor}`,
+                border: `2px solid ${borderColor}`,
                 borderRadius: "5px",
                 padding: "10px",
-                marginBottom: "10px",
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center"
+                alignItems: "center",
+                cursor: "pointer"
               }}
+              onClick={() => toggleSubjectExpand(subject)}
             >
               <h4 style={{ color: titleColor, margin: 0 }}>{subject}</h4>
-              <div>
-                <i
-                  className="fa-regular fa-pen-to-square mx-2"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleEditSubject(subject)}
-                ></i>
-                <i
-                  className="fa-solid fa-trash-can mx-2"
-                  style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
-                  onClick={() => handleDeleteSubject(subject)}
-                ></i>
-              </div>
+              <i
+                className={`fa-solid fa-chevron-${isExpanded ? "up" : "down"}`}
+                style={{ color: titleColor, cursor: "pointer" }}
+              ></i>
             </div>
-          );
-        })
-      )}
+            {/* Expanded Records Table */}
+            {isExpanded && (
+              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px" }}>
+                <table className="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subjectRecords.map(record => (
+                      <tr key={record._id}>
+                        <td>{new Date(record.date).toLocaleDateString()}</td>
+                        <td style={{ color: record.status.toLowerCase() === "present" ? "green" : "red", fontWeight: "bold" }}>
+                          {record.status}
+                        </td>
+                        <td>
+                          <i
+                            className="fa-regular fa-pen-to-square mx-2"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleEditClick(record)}
+                          ></i>
+                          <i
+                            className="fa-solid fa-trash-can mx-2"
+                            style={{ cursor: "pointer", color: mode === "dark" ? "white" : "black" }}
+                            onClick={() => handleDelete(record._id)}
+                          ></i>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
       
       <hr />
       <h3>Attendance Summary</h3>
