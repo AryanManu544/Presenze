@@ -46,10 +46,10 @@ const ViewAttendance = ({ mode, showalert }) => {
   };
 
   // Open Edit Modal (if needed)
-  const handleEditClick = (record) => {
+  /*const handleEditClick = (record) => {
     setSelectedAttendance(record);
     setShowModal(true);
-  };
+  };*/
 
   // Close Edit Modal
   const handleModalClose = () => {
