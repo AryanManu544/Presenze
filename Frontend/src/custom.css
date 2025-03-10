@@ -1,0 +1,7 @@
+.form-control.dark-placeholder::placeholder {
+  color: white !important;
+}
+
+.form-control.light-placeholder::placeholder {
+  color: black !important;
+}
