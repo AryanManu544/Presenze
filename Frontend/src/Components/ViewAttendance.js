@@ -38,38 +38,62 @@ const ViewAttendance = ({ mode, showalert }) => {
     return groups;
   }, {});
 
-  // Determine background color based on attendance percentage
+  // Determine border (attendance) color based on percentage
   const getAttendanceColor = (percentage) => {
     if (percentage >= 90) return "green";
     else if (percentage >= 75) return "yellow";
     else return "red";
   };
 
-  // Example handler to delete all records for a subject
-  const handleDeleteSubject = async (subject) => {
-    // This is an example: adjust according to your API.
-    try {
-      const token = localStorage.getItem("token");
-      // Assume you have an API endpoint to delete all records for a subject
-      await axios.delete(`${API_BASE_URL}/api/attendance/deleteSubject/${subject}`, {
-        headers: { "auth-token": token }
-      });
-      // Filter out the records for that subject
-      setRecords(records.filter(record => record.className !== subject));
-      showalert(`Deleted all records for ${subject}`, "success");
-    } catch (err) {
-      console.error(err);
-      showalert("Error deleting subject records", "danger");
+  // Return a translucent version of the color using RGBA values
+  const getTranslucentColor = (color) => {
+    switch (color) {
+      case "green":
+        return "rgba(0,128,0,0.3)";
+      case "yellow":
+        return "rgba(255,255,0,0.3)";
+      case "red":
+        return "rgba(255,0,0,0.3)";
+      default:
+        return "transparent";
     }
   };
 
-  // Example handler to edit a subject group – you might decide how to handle group edits
-  const handleEditSubject = (subject) => {
-    // For example, select the first record from that group to edit
-    const subjectRecords = groupedRecords[subject];
-    if (subjectRecords && subjectRecords.length > 0) {
-      setSelectedAttendance(subjectRecords[0]);
-      setShowModal(true);
+  // Open Edit Modal
+  const handleEditClick = (record) => {
+    setSelectedAttendance(record);
+    setShowModal(true);
+  };
+
+  // Close Edit Modal
+  const handleModalClose = () => {
+    setShowModal(false);
+    setSelectedAttendance(null);
+  };
+
+  const handleSaveChanges = async (updatedRecord) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_BASE_URL}/api/attendance/edit/${updatedRecord._id}`,
+        updatedRecord,
+        { headers: { "auth-token": token } }
+      );
+      setRecords(records.map(r => r._id === updatedRecord._id ? response.data : r));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
+        headers: { "auth-token": token }
+      });
+      setRecords(records.filter(r => r._id !== id));
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -78,6 +102,8 @@ const ViewAttendance = ({ mode, showalert }) => {
   };
 
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
+  const borderColor = mode === "dark" ? "white" : "black";
+  const titleColor = mode === "dark" ? "white" : "black";
 
   return (
     <div className={containerClass}>
@@ -90,43 +116,26 @@ const ViewAttendance = ({ mode, showalert }) => {
       </button>
       
       {showRawRecords && (
-        // Render grouped records with container colors and borders
+        // Render grouped records with translucent background and colored borders
         Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
           const total = subjectRecords.length;
-          // Count records with status "present" (case-insensitive)
           const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
           const percentage = (presentCount / total) * 100;
-          const bgColor = getAttendanceColor(percentage);
-          const borderColor = mode === "dark" ? "white" : "black";
-          const titleColor = mode === "dark" ? "white" : "black";
+          const attColor = getAttendanceColor(percentage);
+          const bgColor = getTranslucentColor(attColor);
 
           return (
             <div
               key={subject}
               style={{
                 backgroundColor: bgColor,
-                border: `2px solid ${borderColor}`,
+                border: `2px solid ${attColor}`,
                 borderRadius: "5px",
                 padding: "10px",
-                marginBottom: "10px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
+                marginBottom: "10px"
               }}
             >
               <h4 style={{ color: titleColor, margin: 0 }}>{subject}</h4>
-              <div>
-                <i
-                  className="fa-regular fa-pen-to-square mx-2"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleEditSubject(subject)}
-                ></i>
-                <i
-                  className="fa-solid fa-trash-can mx-2"
-                  style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
-                  onClick={() => handleDeleteSubject(subject)}
-                ></i>
-              </div>
             </div>
           );
         })
@@ -140,13 +149,10 @@ const ViewAttendance = ({ mode, showalert }) => {
       {selectedAttendance && (
         <EditAttendanceModal
           show={showModal}
-          color={mode === 'dark' ? 'white' : 'black'}
-          handleClose={() => {
-            setShowModal(false);
-            setSelectedAttendance(null);
-          }}
+          color={titleColor}
+          handleClose={handleModalClose}
           attendanceRecord={selectedAttendance}
-          onSave={() => {}}
+          onSave={handleSaveChanges}          
           mode={mode}
         />      
       )}
