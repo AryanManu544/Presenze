@@ -28,28 +28,19 @@ const ViewAttendance = ({ mode, showalert }) => {
     fetchAttendance();
   }, [API_BASE_URL]);
 
-  // Group records by subject (assuming subject is in record.className)
-  const groupedRecords = records.reduce((groups, record) => {
-    const subject = record.className;
-    if (!groups[subject]) {
-      groups[subject] = [];
-    }
-    groups[subject].push(record);
-    return groups;
-  }, {});
-
-  // Determine background color based on attendance percentage
-  const getAttendanceColor = (percentage) => {
-    if (percentage >= 90) return "green";
-    else if (percentage >= 75) return "yellow";
-    else return "red";
+  // Helper to determine text color for date and status based on record.status
+  const getRecordColor = (status) => {
+    const st = status.toLowerCase();
+    if (st === "present") return "green";
+    else if (st === "absent") return "red";
+    else return "yellow";
   };
 
-  // Open Edit Modal (if needed)
-  /*const handleEditClick = (record) => {
+  // Open Edit Modal
+  const handleEditClick = (record) => {
     setSelectedAttendance(record);
     setShowModal(true);
-  };*/
+  };
 
   // Close Edit Modal
   const handleModalClose = () => {
@@ -57,52 +48,94 @@ const ViewAttendance = ({ mode, showalert }) => {
     setSelectedAttendance(null);
   };
 
+  const handleSaveChanges = async (updatedRecord) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_BASE_URL}/api/attendance/edit/${updatedRecord._id}`,
+        updatedRecord,
+        { headers: { "auth-token": token } }
+      );
+      setRecords(records.map(r => r._id === updatedRecord._id ? response.data : r));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
+        headers: { "auth-token": token }
+      });
+      setRecords(records.filter(r => r._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleRawRecords = () => {
+    setShowRawRecords(!showRawRecords);
+  };
+
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
+  // listItemClass remains as before for overall styling
+  const listItemClass = mode === "dark" ? "list-group-item bg-dark text-light" : "list-group-item";
 
   return (
     <div className={containerClass}>
+      <h2 style={{ color: mode === "dark" ? "white" : "black" }}>Attendance Records</h2>
       {error && <div className="alert alert-danger">{error}</div>}
       
       {/* Toggle Raw Records Button */}
-      <button className="btn btn-outline-info mb-3" onClick={() => setShowRawRecords(!showRawRecords)}>
+      <button className="btn btn-outline-info mb-3" onClick={toggleRawRecords}>
         {showRawRecords ? "Hide Subjects List" : "Show Subjects List"}
       </button>
       
       {showRawRecords && (
-        Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
-          const total = subjectRecords.length;
-          // Adjust this filter if your data uses different values for presence.
-          const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
-          const percentage = (presentCount / total) * 100;
-          const bgColor = getAttendanceColor(percentage);
-
-          return (
-            <div
-              key={subject}
-              style={{
-                backgroundColor: bgColor,
-                padding: "10px",
-                borderRadius: "5px",
-                marginBottom: "10px"
-              }}
-            >
-              <h4 style={{ color: "white", margin: 0 }}>{subject}</h4>
-            </div>
-          );
-        })
+        <ul className="list-group mb-3">
+          {records.map(record => (
+            <li key={record._id} className={`d-flex justify-content-between align-items-center ${listItemClass}`}>
+              <div>
+                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Subject:</strong> {record.className} <br />
+                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Date:</strong> 
+                <span style={{ color: getRecordColor(record.status) }}>
+                  {" "}{new Date(record.date).toLocaleDateString()}
+                </span> <br />
+                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Status:</strong> 
+                <span style={{ color: getRecordColor(record.status) }}>
+                  {" "}{record.status}
+                </span>
+              </div>
+              <div>
+                <i
+                  className="fa-regular fa-pen-to-square mx-2"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleEditClick(record)}>
+                </i>
+                <i 
+                  className="fa-solid fa-trash-can my-1 mx-2"
+                  style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
+                  onClick={() => handleDelete(record._id)}>
+                </i>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
       
-      {/* Optionally include other components */}
       <hr />
+      <h3 style={{ color: mode === "dark" ? "white" : "black" }}>Attendance Summary</h3>
       <AttendancePieCharts attendanceRecords={records} mode={mode} />
 
+      {/* Edit Attendance Modal */}
       {selectedAttendance && (
         <EditAttendanceModal
           show={showModal}
           color={mode === 'dark' ? 'white' : 'black'}
           handleClose={handleModalClose}
           attendanceRecord={selectedAttendance}
-          onSave={() => {}}
+          onSave={handleSaveChanges}          
           mode={mode}
         />      
       )}
