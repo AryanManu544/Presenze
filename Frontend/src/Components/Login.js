@@ -40,35 +40,35 @@ const Login = ({ mode, showalert }) => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const API_BASE_URL =
-      process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const API_BASE_URL =
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
 
-      const json = await response.json();
-      if (json.authtoken) {
-        if (credentials.remember) {
-          localStorage.setItem("token", json.authtoken);
-        } else {
-          sessionStorage.setItem("token", json.authtoken);
-        }
-        showalert("Logged in successfully", "success");
-        navigate("/");
+    const json = await response.json();
+    if (json.authtoken) {
+      if (credentials.remember) {
+        localStorage.setItem("token", json.authtoken);
       } else {
-        showalert("Invalid credentials", "danger");
+        sessionStorage.setItem("token", json.authtoken);
       }
-    } catch (error) {
-      console.error("Error:", error);
-      showalert("An error occurred", "danger");
+      showalert("Logged in successfully", "success");
+      navigate("/");
+    } else {
+      showalert("Invalid credentials", "danger");
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+    showalert("An error occurred", "danger");
+  }
+};
 
   return (
     <div
