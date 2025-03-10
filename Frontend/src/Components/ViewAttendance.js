@@ -92,7 +92,7 @@ const ViewAttendance = ({ mode, showalert }) => {
   };
 
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
-  const borderColor = mode === "dark" ? "white" : "black";
+  //const borderColor = mode === "dark" ? "white" : "black";
   const titleColor = mode === "dark" ? "white" : "black";
 
   return (
