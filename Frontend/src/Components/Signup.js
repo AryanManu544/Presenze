@@ -21,7 +21,7 @@ const Signup = ({ mode, showalert }) => {
     document.body.style.height = "100vh"; 
     document.body.style.margin = "0"; 
 
-    return () => {
+    /*return () => {
       // Clean up styles on component unmount
       document.body.style.backgroundImage = "";
       document.body.style.backgroundSize = "";
@@ -29,7 +29,7 @@ const Signup = ({ mode, showalert }) => {
       document.body.style.backgroundRepeat = "";
       document.body.style.height = "";
       document.body.style.margin = "";
-    };
+    };*/
   }, [mode]);
 
   const onChange = (e) => {

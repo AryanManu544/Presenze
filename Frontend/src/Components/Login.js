@@ -22,14 +22,14 @@ const Login = ({ mode, showalert }) => {
     document.body.style.height = "100vh";
     document.body.style.margin = "0";
 
-    return () => {
+    /*return () => {
       document.body.style.backgroundImage = "";
       document.body.style.backgroundSize = "";
       document.body.style.backgroundPosition = "";
       document.body.style.backgroundRepeat = "";
       document.body.style.height = "";
       document.body.style.margin = "";
-    };
+    };*/
   }, [mode]);
 
   const onChange = (e) => {
@@ -126,7 +126,6 @@ const Login = ({ mode, showalert }) => {
         <button type="submit" className="btn btn-outline-primary w-100">
           Sign In
         </button>
-        {/* Row with "Remember Me" on left and "Forgot Password?" on right */}
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="form-check">
             <input
