@@ -8,7 +8,7 @@ const ViewAttendance = ({ mode, showalert }) => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
-  const [expandedSubjects, setExpandedSubjects] = useState({}); // tracks which subject is expanded
+  const [expandedSubjects, setExpandedSubjects] = useState({});
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
@@ -28,24 +28,22 @@ const ViewAttendance = ({ mode, showalert }) => {
     fetchAttendance();
   }, [API_BASE_URL]);
 
-  // Group records by subject (assuming subject is in record.className)
+  // Group by subject
   const groupedRecords = records.reduce((groups, record) => {
     const subject = record.className;
-    if (!groups[subject]) {
-      groups[subject] = [];
-    }
+    if (!groups[subject]) groups[subject] = [];
     groups[subject].push(record);
     return groups;
   }, {});
 
-  // Determine border (attendance) color based on percentage
+  // Determine color from attendance percentage
   const getAttendanceColor = (percentage) => {
     if (percentage >= 90) return "green";
     else if (percentage >= 75) return "yellow";
-    else return "red";
+    return "red";
   };
 
-  // Return a translucent version of the color using RGBA values
+  // Translucent background
   const getTranslucentColor = (color) => {
     switch (color) {
       case "green":
@@ -59,28 +57,27 @@ const ViewAttendance = ({ mode, showalert }) => {
     }
   };
 
-  // Toggle subject expansion
+  // Toggle expansion
   const toggleSubjectExpand = (subject) => {
     setExpandedSubjects((prev) => ({
       ...prev,
-      [subject]: !prev[subject]
+      [subject]: !prev[subject],
     }));
   };
 
-  // Individual record edit handler
+  // Edit & Delete Handlers
   const handleEditClick = (record) => {
     setSelectedAttendance(record);
     setShowModal(true);
   };
 
-  // Individual record delete handler
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
         headers: { "auth-token": token }
       });
-      setRecords(records.filter(r => r._id !== id));
+      setRecords((prev) => prev.filter((r) => r._id !== id));
       showalert("Record deleted", "success");
     } catch (err) {
       console.error(err);
@@ -88,6 +85,7 @@ const ViewAttendance = ({ mode, showalert }) => {
     }
   };
 
+  // Theming variables
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
   const borderColor = mode === "dark" ? "white" : "black";
   const titleColor = mode === "dark" ? "white" : "black";
@@ -97,7 +95,6 @@ const ViewAttendance = ({ mode, showalert }) => {
       <h2>Attendance Records</h2>
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Render grouped records with expandable raw records */}
       {Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
         const total = subjectRecords.length;
         const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
@@ -108,7 +105,7 @@ const ViewAttendance = ({ mode, showalert }) => {
 
         return (
           <div key={subject} style={{ marginBottom: "10px" }}>
-            {/* Subject Header (clickable to expand/collapse) */}
+            {/* Subject Header */}
             <div
               style={{
                 backgroundColor: bgColor,
@@ -128,7 +125,8 @@ const ViewAttendance = ({ mode, showalert }) => {
                 style={{ color: titleColor, cursor: "pointer" }}
               ></i>
             </div>
-            {/* Expanded Records Table */}
+
+            {/* Expanded Table */}
             {isExpanded && (
               <div
                 style={{
@@ -140,47 +138,97 @@ const ViewAttendance = ({ mode, showalert }) => {
                 }}
               >
                 <table
-                  className="table table-sm table-bordered"
                   style={{
-                    color: mode === "dark" ? "white" : "black",
-                    backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    backgroundColor: mode === "dark" ? "#000000" : "#ffffff",
+                    color: mode === "dark" ? "#ffffff" : "#000000",
+                    border: "1px solid #444"
                   }}
                 >
                   <thead
                     style={{
-                      color: titleColor,
-                      backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                      backgroundColor: mode === "dark" ? "#000000" : "#ffffff",
                     }}
                   >
                     <tr>
-                      <th style={{ color: titleColor }}>Date</th>
-                      <th style={{ color: titleColor }}>Status</th>
-                      <th style={{ color: titleColor }}>Actions</th>
+                      <th
+                        style={{
+                          border: "1px solid #444",
+                          padding: "8px",
+                          color: titleColor
+                        }}
+                      >
+                        Date
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #444",
+                          padding: "8px",
+                          color: titleColor
+                        }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #444",
+                          padding: "8px",
+                          color: titleColor
+                        }}
+                      >
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {subjectRecords.map(record => (
-                      <tr key={record._id}
-                          style={{ backgroundColor: mode === "dark" ? "#000000" : "#ffffff" }}
+                    {subjectRecords.map((record) => (
+                      <tr
+                        key={record._id}
+                        style={{
+                          backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                        }}
                       >
-                        <td style={{ color: mode === "dark" ? "white" : "black" }}>
+                        <td
+                          style={{
+                            border: "1px solid #444",
+                            padding: "8px",
+                            color: mode === "dark" ? "#ffffff" : "#000000"
+                          }}
+                        >
                           {new Date(record.date).toLocaleDateString()}
                         </td>
-                        <td style={{
-                          color: record.status.toLowerCase() === "present" ? "green" : "red",
-                          fontWeight: "bold"
-                        }}>
+                        <td
+                          style={{
+                            border: "1px solid #444",
+                            padding: "8px",
+                            color:
+                              record.status.toLowerCase() === "present" ? "green" : "red",
+                            fontWeight: "bold"
+                          }}
+                        >
                           {record.status}
                         </td>
-                        <td>
+                        <td
+                          style={{
+                            border: "1px solid #444",
+                            padding: "8px"
+                          }}
+                        >
                           <i
                             className="fa-regular fa-pen-to-square mx-2"
-                            style={{ cursor: "pointer", color: mode === "dark" ? "white" : "black" }}
+                            style={{
+                              cursor: "pointer",
+                              color: mode === "dark" ? "#ffffff" : "#000000"
+                            }}
                             onClick={() => handleEditClick(record)}
                           ></i>
                           <i
                             className="fa-solid fa-trash-can mx-2"
-                            style={{ cursor: "pointer", color: mode === "dark" ? "white" : "black" }}
+                            style={{
+                              cursor: "pointer",
+                              color: mode === "dark" ? "#ffffff" : "#000000"
+                            }}
                             onClick={() => handleDelete(record._id)}
                           ></i>
                         </td>
@@ -198,7 +246,6 @@ const ViewAttendance = ({ mode, showalert }) => {
       <h3>Attendance Summary</h3>
       <AttendancePieCharts attendanceRecords={records} mode={mode} />
 
-      {/* Edit Attendance Modal */}
       {selectedAttendance && (
         <EditAttendanceModal
           show={showModal}
