@@ -59,41 +59,31 @@ const ViewAttendance = ({ mode, showalert }) => {
     }
   };
 
-  // Open Edit Modal
-  const handleEditClick = (record) => {
-    setSelectedAttendance(record);
-    setShowModal(true);
-  };
-
-  // Close Edit Modal
-  const handleModalClose = () => {
-    setShowModal(false);
-    setSelectedAttendance(null);
-  };
-
-  const handleSaveChanges = async (updatedRecord) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_BASE_URL}/api/attendance/edit/${updatedRecord._id}`,
-        updatedRecord,
-        { headers: { "auth-token": token } }
-      );
-      setRecords(records.map(r => r._id === updatedRecord._id ? response.data : r));
-    } catch (err) {
-      console.error(err);
+  // Handle editing a subject group
+  // For example, open the modal with the first record from the group
+  const handleEditSubject = (subject) => {
+    const subjectRecords = groupedRecords[subject];
+    if (subjectRecords && subjectRecords.length > 0) {
+      setSelectedAttendance(subjectRecords[0]);
+      setShowModal(true);
     }
   };
 
-  const handleDelete = async (id) => {
+  // Handle deleting a subject group.
+  // Adjust this logic based on your API: here we assume an endpoint exists to delete all records for a subject.
+  const handleDeleteSubject = async (subject) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
+      // Example API endpoint to delete all records for a subject
+      await axios.delete(`${API_BASE_URL}/api/attendance/deleteSubject/${subject}`, {
         headers: { "auth-token": token }
       });
-      setRecords(records.filter(r => r._id !== id));
+      // Remove records for this subject from state
+      setRecords(records.filter(record => record.className !== subject));
+      showalert(`Deleted all records for ${subject}`, "success");
     } catch (err) {
       console.error(err);
+      showalert("Error deleting subject records", "danger");
     }
   };
 
@@ -116,7 +106,7 @@ const ViewAttendance = ({ mode, showalert }) => {
       </button>
       
       {showRawRecords && (
-        // Render grouped records with translucent background and colored borders
+        // Render grouped records with translucent background, colored borders, and icons
         Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
           const total = subjectRecords.length;
           const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
@@ -132,10 +122,25 @@ const ViewAttendance = ({ mode, showalert }) => {
                 border: `2px solid ${attColor}`,
                 borderRadius: "5px",
                 padding: "10px",
-                marginBottom: "10px"
+                marginBottom: "10px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
               }}
             >
               <h4 style={{ color: titleColor, margin: 0 }}>{subject}</h4>
+              <div>
+                <i
+                  className="fa-regular fa-pen-to-square mx-2"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleEditSubject(subject)}
+                ></i>
+                <i
+                  className="fa-solid fa-trash-can mx-2"
+                  style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
+                  onClick={() => handleDeleteSubject(subject)}
+                ></i>
+              </div>
             </div>
           );
         })
@@ -150,9 +155,12 @@ const ViewAttendance = ({ mode, showalert }) => {
         <EditAttendanceModal
           show={showModal}
           color={titleColor}
-          handleClose={handleModalClose}
+          handleClose={() => {
+            setShowModal(false);
+            setSelectedAttendance(null);
+          }}
           attendanceRecord={selectedAttendance}
-          onSave={handleSaveChanges}          
+          onSave={() => {}}
           mode={mode}
         />      
       )}
