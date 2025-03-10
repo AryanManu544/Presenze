@@ -130,12 +130,28 @@ const ViewAttendance = ({ mode, showalert }) => {
             </div>
             {/* Expanded Records Table */}
             {isExpanded && (
-              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px",
-              color: mode === "dark" ? "white" : "black",
-              backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
-            }}>
-                <table className="table table-sm table-bordered" style={{ color: mode === "dark" ? "white" : "black" }}>
-                  <thead style={{color: mode === "dark" ? "white" : "black" }} >
+              <div
+                style={{
+                  padding: "10px",
+                  borderLeft: `2px solid ${attColor}`,
+                  marginTop: "5px",
+                  color: mode === "dark" ? "white" : "black",
+                  backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                }}
+              >
+                <table
+                  className="table table-sm table-bordered"
+                  style={{
+                    color: mode === "dark" ? "white" : "black",
+                    backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                  }}
+                >
+                  <thead
+                    style={{
+                      color: titleColor,
+                      backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+                    }}
+                  >
                     <tr>
                       <th style={{ color: titleColor }}>Date</th>
                       <th style={{ color: titleColor }}>Status</th>
@@ -144,9 +160,16 @@ const ViewAttendance = ({ mode, showalert }) => {
                   </thead>
                   <tbody>
                     {subjectRecords.map(record => (
-                      <tr key={record._id}>
-                        <td style={{color: mode === "dark" ? "white" : "black" }}>{new Date(record.date).toLocaleDateString() }</td>
-                        <td style={{ color: record.status.toLowerCase() === "present" ? "green" : "red", fontWeight: "bold" }}>
+                      <tr key={record._id}
+                          style={{ backgroundColor: mode === "dark" ? "#000000" : "#ffffff" }}
+                      >
+                        <td style={{ color: mode === "dark" ? "white" : "black" }}>
+                          {new Date(record.date).toLocaleDateString()}
+                        </td>
+                        <td style={{
+                          color: record.status.toLowerCase() === "present" ? "green" : "red",
+                          fontWeight: "bold"
+                        }}>
                           {record.status}
                         </td>
                         <td>
@@ -185,7 +208,7 @@ const ViewAttendance = ({ mode, showalert }) => {
             setSelectedAttendance(null);
           }}
           attendanceRecord={selectedAttendance}
-          onSave={() => { }}
+          onSave={() => {}}
           mode={mode}
         />
       )}
