@@ -132,7 +132,7 @@ const ViewAttendance = ({ mode, showalert }) => {
             {isExpanded && (
               <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px", color: mode === "dark" ? "white" : "black" }}>
                 <table className="table table-sm table-bordered" style={{ color: mode === "dark" ? "white" : "black" }}>
-                  <thead>
+                  <thead style={{color: mode === "dark" ? "white" : "black" }} >
                     <tr>
                       <th style={{ color: titleColor }}>Date</th>
                       <th style={{ color: titleColor }}>Status</th>
@@ -142,7 +142,7 @@ const ViewAttendance = ({ mode, showalert }) => {
                   <tbody>
                     {subjectRecords.map(record => (
                       <tr key={record._id}>
-                        <td>{new Date(record.date).toLocaleDateString()}</td>
+                        <td style={{color: mode === "dark" ? "white" : "black" }}>{new Date(record.date).toLocaleDateString() }</td>
                         <td style={{ color: record.status.toLowerCase() === "present" ? "green" : "red", fontWeight: "bold" }}>
                           {record.status}
                         </td>
