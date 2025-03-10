@@ -130,7 +130,10 @@ const ViewAttendance = ({ mode, showalert }) => {
             </div>
             {/* Expanded Records Table */}
             {isExpanded && (
-              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px", color: mode === "dark" ? "white" : "black" }}>
+              <div style={{ padding: "10px", borderLeft: `2px solid ${attColor}`, marginTop: "5px",
+              color: mode === "dark" ? "white" : "black",
+              backgroundColor: mode === "dark" ? "#000000" : "#ffffff"
+            }}>
                 <table className="table table-sm table-bordered" style={{ color: mode === "dark" ? "white" : "black" }}>
                   <thead style={{color: mode === "dark" ? "white" : "black" }} >
                     <tr>
