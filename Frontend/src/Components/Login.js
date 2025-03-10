@@ -9,12 +9,10 @@ const Login = ({ mode, showalert }) => {
   });
   const navigate = useNavigate();
 
+  // On mount, load saved credentials (if any)
   useEffect(() => {
     document.body.setAttribute("data-theme", mode);
-    const backgroundImage =
-      mode === "dark"
-        ? "/assets/darkmode.jpg"
-        : "/assets/lightmode.jpg";
+    const backgroundImage = mode === "dark" ? "/assets/darkmode.jpg" : "/assets/lightmode.jpg";
     document.body.style.backgroundImage = `url(${backgroundImage})`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
@@ -22,14 +20,11 @@ const Login = ({ mode, showalert }) => {
     document.body.style.height = "100vh";
     document.body.style.margin = "0";
 
-    /*return () => {
-      document.body.style.backgroundImage = "";
-      document.body.style.backgroundSize = "";
-      document.body.style.backgroundPosition = "";
-      document.body.style.backgroundRepeat = "";
-      document.body.style.height = "";
-      document.body.style.margin = "";
-    };*/
+    // Load saved credentials from localStorage
+    const savedCreds = localStorage.getItem("loginCreds");
+    if (savedCreds) {
+      setCredentials(JSON.parse(savedCreds));
+    }
   }, [mode]);
 
   const onChange = (e) => {
@@ -40,35 +35,42 @@ const Login = ({ mode, showalert }) => {
     });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
 
-    const json = await response.json();
-    if (json.authtoken) {
-      if (credentials.remember) {
-        localStorage.setItem("token", json.authtoken);
+      const json = await response.json();
+      if (json.authtoken) {
+        // Save token in storage
+        if (credentials.remember) {
+          localStorage.setItem("token", json.authtoken);
+          // Also store credentials (email and password) for pre-filling
+          localStorage.setItem("loginCreds", JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+            remember: credentials.remember,
+          }));
+        } else {
+          sessionStorage.setItem("token", json.authtoken);
+          localStorage.removeItem("loginCreds");
+        }
+        showalert("Logged in successfully", "success");
+        navigate("/");
       } else {
-        sessionStorage.setItem("token", json.authtoken);
+        showalert("Invalid credentials", "danger");
       }
-      showalert("Logged in successfully", "success");
-      navigate("/");
-    } else {
-      showalert("Invalid credentials", "danger");
+    } catch (error) {
+      console.error("Error:", error);
+      showalert("An error occurred", "danger");
     }
-  } catch (error) {
-    console.error("Error:", error);
-    showalert("An error occurred", "danger");
-  }
-};
+  };
 
   return (
     <div
@@ -88,9 +90,7 @@ const handleSubmit = async (e) => {
       <h2 className="text-center">Login</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label htmlFor="email" className="form-label">
-            Email address
-          </label>
+          <label htmlFor="email" className="form-label">Email address</label>
           <input
             type="email"
             className="form-control"
@@ -98,17 +98,11 @@ const handleSubmit = async (e) => {
             value={credentials.email}
             onChange={onChange}
             id="email"
-            style={
-              mode === "dark"
-                ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" }
-                : {}
-            }
+            style={mode === "dark" ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" } : {}}
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
+          <label htmlFor="password" className="form-label">Password</label>
           <input
             type="password"
             className="form-control"
@@ -116,16 +110,10 @@ const handleSubmit = async (e) => {
             value={credentials.password}
             onChange={onChange}
             id="password"
-            style={
-              mode === "dark"
-                ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" }
-                : {}
-            }
+            style={mode === "dark" ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" } : {}}
           />
         </div>
-        <button type="submit" className="btn btn-outline-primary w-100">
-          Sign In
-        </button>
+        <button type="submit" className="btn btn-outline-primary w-100">Sign In</button>
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div className="form-check">
             <input
@@ -136,9 +124,7 @@ const handleSubmit = async (e) => {
               checked={credentials.remember}
               onChange={onChange}
             />
-            <label className="form-check-label" htmlFor="remember">
-              Remember Me
-            </label>
+            <label className="form-check-label" htmlFor="remember">Remember Me</label>
           </div>
           <div>
             <Link to="/forgotpassword">Forgot Password?</Link>
