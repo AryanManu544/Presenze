@@ -28,49 +28,48 @@ const ViewAttendance = ({ mode, showalert }) => {
     fetchAttendance();
   }, [API_BASE_URL]);
 
-  // Helper to determine text color for date and status based on record.status
-  const getRecordColor = (status) => {
-    const st = status.toLowerCase();
-    if (st === "present") return "green";
-    else if (st === "absent") return "red";
-    else return "yellow";
+  // Group records by subject (assuming subject is in record.className)
+  const groupedRecords = records.reduce((groups, record) => {
+    const subject = record.className;
+    if (!groups[subject]) {
+      groups[subject] = [];
+    }
+    groups[subject].push(record);
+    return groups;
+  }, {});
+
+  // Determine background color based on attendance percentage
+  const getAttendanceColor = (percentage) => {
+    if (percentage >= 90) return "green";
+    else if (percentage >= 75) return "yellow";
+    else return "red";
   };
 
-  // Open Edit Modal
-  const handleEditClick = (record) => {
-    setSelectedAttendance(record);
-    setShowModal(true);
-  };
-
-  // Close Edit Modal
-  const handleModalClose = () => {
-    setShowModal(false);
-    setSelectedAttendance(null);
-  };
-
-  const handleSaveChanges = async (updatedRecord) => {
+  // Example handler to delete all records for a subject
+  const handleDeleteSubject = async (subject) => {
+    // This is an example: adjust according to your API.
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_BASE_URL}/api/attendance/edit/${updatedRecord._id}`,
-        updatedRecord,
-        { headers: { "auth-token": token } }
-      );
-      setRecords(records.map(r => r._id === updatedRecord._id ? response.data : r));
+      // Assume you have an API endpoint to delete all records for a subject
+      await axios.delete(`${API_BASE_URL}/api/attendance/deleteSubject/${subject}`, {
+        headers: { "auth-token": token }
+      });
+      // Filter out the records for that subject
+      setRecords(records.filter(record => record.className !== subject));
+      showalert(`Deleted all records for ${subject}`, "success");
     } catch (err) {
       console.error(err);
+      showalert("Error deleting subject records", "danger");
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/api/attendance/delete/${id}`, {
-        headers: { "auth-token": token }
-      });
-      setRecords(records.filter(r => r._id !== id));
-    } catch (err) {
-      console.error(err);
+  // Example handler to edit a subject group – you might decide how to handle group edits
+  const handleEditSubject = (subject) => {
+    // For example, select the first record from that group to edit
+    const subjectRecords = groupedRecords[subject];
+    if (subjectRecords && subjectRecords.length > 0) {
+      setSelectedAttendance(subjectRecords[0]);
+      setShowModal(true);
     }
   };
 
@@ -79,12 +78,10 @@ const ViewAttendance = ({ mode, showalert }) => {
   };
 
   const containerClass = mode === "dark" ? "bg-dark text-light" : "bg-light text-dark";
-  // listItemClass remains as before for overall styling
-  const listItemClass = mode === "dark" ? "list-group-item bg-dark text-light" : "list-group-item";
 
   return (
     <div className={containerClass}>
-      <h2 style={{ color: mode === "dark" ? "white" : "black" }}>Attendance Records</h2>
+      <h2>Attendance Records</h2>
       {error && <div className="alert alert-danger">{error}</div>}
       
       {/* Toggle Raw Records Button */}
@@ -93,39 +90,50 @@ const ViewAttendance = ({ mode, showalert }) => {
       </button>
       
       {showRawRecords && (
-        <ul className="list-group mb-3">
-          {records.map(record => (
-            <li key={record._id} className={`d-flex justify-content-between align-items-center ${listItemClass}`}>
-              <div>
-                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Subject:</strong> {record.className} <br />
-                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Date:</strong> 
-                <span style={{ color: getRecordColor(record.status) }}>
-                  {" "}{new Date(record.date).toLocaleDateString()}
-                </span> <br />
-                <strong style={{ color: mode === "dark" ? "white" : "black" }}>Status:</strong> 
-                <span style={{ color: getRecordColor(record.status) }}>
-                  {" "}{record.status}
-                </span>
-              </div>
+        // Render grouped records with container colors and borders
+        Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
+          const total = subjectRecords.length;
+          // Count records with status "present" (case-insensitive)
+          const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
+          const percentage = (presentCount / total) * 100;
+          const bgColor = getAttendanceColor(percentage);
+          const borderColor = mode === "dark" ? "white" : "black";
+          const titleColor = mode === "dark" ? "white" : "black";
+
+          return (
+            <div
+              key={subject}
+              style={{
+                backgroundColor: bgColor,
+                border: `2px solid ${borderColor}`,
+                borderRadius: "5px",
+                padding: "10px",
+                marginBottom: "10px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <h4 style={{ color: titleColor, margin: 0 }}>{subject}</h4>
               <div>
                 <i
                   className="fa-regular fa-pen-to-square mx-2"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleEditClick(record)}>
-                </i>
-                <i 
-                  className="fa-solid fa-trash-can my-1 mx-2"
+                  onClick={() => handleEditSubject(subject)}
+                ></i>
+                <i
+                  className="fa-solid fa-trash-can mx-2"
                   style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
-                  onClick={() => handleDelete(record._id)}>
-                </i>
+                  onClick={() => handleDeleteSubject(subject)}
+                ></i>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          );
+        })
       )}
       
       <hr />
-      <h3 style={{ color: mode === "dark" ? "white" : "black" }}>Attendance Summary</h3>
+      <h3>Attendance Summary</h3>
       <AttendancePieCharts attendanceRecords={records} mode={mode} />
 
       {/* Edit Attendance Modal */}
@@ -133,9 +141,12 @@ const ViewAttendance = ({ mode, showalert }) => {
         <EditAttendanceModal
           show={showModal}
           color={mode === 'dark' ? 'white' : 'black'}
-          handleClose={handleModalClose}
+          handleClose={() => {
+            setShowModal(false);
+            setSelectedAttendance(null);
+          }}
           attendanceRecord={selectedAttendance}
-          onSave={handleSaveChanges}          
+          onSave={() => {}}
           mode={mode}
         />      
       )}
