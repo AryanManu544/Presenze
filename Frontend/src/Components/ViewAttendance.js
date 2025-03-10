@@ -28,6 +28,23 @@ const ViewAttendance = ({ mode, showalert }) => {
     fetchAttendance();
   }, [API_BASE_URL]);
 
+  // Group records by subject (assuming subject is in record.className)
+  const groupedRecords = records.reduce((groups, record) => {
+    const subject = record.className;
+    if (!groups[subject]) {
+      groups[subject] = [];
+    }
+    groups[subject].push(record);
+    return groups;
+  }, {});
+
+  // Determine color based on attendance percentage
+  const getAttendanceColor = (percentage) => {
+    if (percentage >= 90) return "green";
+    else if (percentage >= 75) return "yellow";
+    else return "red";
+  };
+
   // Open Edit Modal
   const handleEditClick = (record) => {
     setSelectedAttendance(record);
@@ -80,37 +97,52 @@ const ViewAttendance = ({ mode, showalert }) => {
       
       {/* Toggle Raw Records Button */}
       <button className="btn btn-outline-info mb-3" onClick={toggleRawRecords}>
-        {showRawRecords ? "Hide Raw Records" : "Show Raw Records"}
+        {showRawRecords ? "Hide Subjects List" : "Show Subjects List"}
       </button>
       
       {showRawRecords && (
-        <ul className="list-group mb-3">
-          {records.map(record => (
-            <li key={record._id} className={`d-flex justify-content-between align-items-center ${listItemClass}`}>
-              <div>
-                <strong>Subject:</strong> {record.className} <br />
-                <strong>Date:</strong> {new Date(record.date).toLocaleDateString()} <br />
-                <strong>Status:</strong> {record.status}
-              </div>
-              <div>
-                <i
-                  className="fa-regular fa-pen-to-square mx-2"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleEditClick(record)}>
-                </i>
-                <i 
-                  className="fa-solid fa-trash-can my-1 mx-2"
-                  style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
-                  onClick={() => handleDelete(record._id)}>
-                </i>
-              </div>
-            </li>
-          ))}
-        </ul>
+        // Render grouped records
+        Object.entries(groupedRecords).map(([subject, subjectRecords]) => {
+          const total = subjectRecords.length;
+          // Assuming status 'Present' means attendance
+          const presentCount = subjectRecords.filter(r => r.status.toLowerCase() === "present").length;
+          const percentage = (presentCount / total) * 100;
+          const color = getAttendanceColor(percentage);
+
+          return (
+            <div key={subject} className="mb-3">
+              <h4 style={{ color }}>
+                {subject} - Attendance: {percentage.toFixed(1)}%
+              </h4>
+              <ul className="list-group">
+                {subjectRecords.map(record => (
+                  <li key={record._id} className={`d-flex justify-content-between align-items-center ${listItemClass}`}>
+                    <div>
+                      <strong>Date:</strong> {new Date(record.date).toLocaleDateString()} <br />
+                      <strong>Status:</strong> {record.status}
+                    </div>
+                    <div>
+                      <i
+                        className="fa-regular fa-pen-to-square mx-2"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handleEditClick(record)}>
+                      </i>
+                      <i 
+                        className="fa-solid fa-trash-can my-1 mx-2"
+                        style={{ cursor: "pointer", color: mode === 'dark' ? 'white' : 'black' }}
+                        onClick={() => handleDelete(record._id)}>
+                      </i>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })
       )}
       
       <hr />
-      <h3>Attendance Summary (by Subject)</h3>
+      <h3>Attendance Summary</h3>
       <AttendancePieCharts attendanceRecords={records} mode={mode} />
 
       {/* Edit Attendance Modal */}
@@ -120,7 +152,7 @@ const ViewAttendance = ({ mode, showalert }) => {
           color={mode === 'dark' ? 'white' : 'black'}
           handleClose={handleModalClose}
           attendanceRecord={selectedAttendance}
-          onSave={handleSaveChanges}          
+          onSave={handleSaveChanges}
           mode={mode}
         />      
       )}
