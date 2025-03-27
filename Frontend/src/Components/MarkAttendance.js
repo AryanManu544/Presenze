@@ -8,6 +8,10 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const [attendance, setAttendance] = useState({}); // Attendance state
   const [timetable, setTimetable] = useState([]); // Timetable data
 
+  // State to keep track of the currently viewed month.
+  // Initialize with the current date.
+  const [currentDate, setCurrentDate] = useState(new Date());
+
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
@@ -21,7 +25,6 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         });
         setTimetable(response.data);
 
-        // Extract unique subjects from timetable
         const uniqueSubjects = [
           ...new Set(response.data.map((entry) => entry.subject)),
         ];
@@ -35,51 +38,14 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     fetchTimetable();
   }, [API_BASE_URL, showalert]);
 
-  // Generate all dates in the current month that match the schedule
   // Helper function to format a date as YYYY-MM-DD in local time
   const formatDate = (date) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+    const month = String(date.getMonth() + 1).padStart(2, "0"); 
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
-  // Generate all dates in the current month that match the schedule
-  const generateDatesForSubject = (subjectEntries, markedDates) => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    const subjectDates = [];
-
-    // Iterate over each day of the week from timetable
-    subjectEntries.forEach((entry) => {
-      const dayOfWeek = entry.day; // e.g., "Wednesday"
-
-      // Find the first occurrence of this weekday in the current month
-      let firstDayOfMonth = new Date(year, month, 1);
-      while (firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)) {
-        firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
-      }
-
-      // Generate all occurrences of this weekday in the current month
-      for (
-        let date = new Date(firstDayOfMonth);
-        date.getMonth() === month;
-        date.setDate(date.getDate() + 7) // Add 7 days to get the next occurrence
-      ) {
-        const formattedDate = formatDate(date); // Use local date formatting
-        subjectDates.push({
-          date: formattedDate,
-          status: markedDates[formattedDate] || null, // Use status from markedDates or default to null
-        });
-      }
-    });
-
-    return subjectDates;
-  };
-
-  // Helper function to convert weekday name to index (e.g., "Sunday" -> 0)
   const getDayIndex = (dayName) => {
     const daysOfWeek = [
       "Sunday",
@@ -93,13 +59,42 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return daysOfWeek.indexOf(dayName);
   };
 
-  // Fetch dates for the selected subject
-  const handleSubjectChange = async (e) => {
-    const subject = e.target.value;
-    setSelectedSubject(subject);
+  // Generate dates for a subject given the subject entries, marked dates, and a target month (via currentDate)
+  const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth();
 
+    const subjectDates = [];
+
+    subjectEntries.forEach((entry) => {
+      const dayOfWeek = entry.day; 
+
+      // Find the first occurrence of this weekday in the target month
+      let firstDayOfMonth = new Date(year, month, 1);
+      while (firstDayOfMonth.getMonth() === month && firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)) {
+        firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
+      }
+
+      // Generate all occurrences of this weekday in the target month
+      for (
+        let date = new Date(firstDayOfMonth);
+        date.getMonth() === month;
+        date.setDate(date.getDate() + 7)
+      ) {
+        const formattedDate = formatDate(date);
+        subjectDates.push({
+          date: formattedDate,
+          status: markedDates[formattedDate] || null, 
+        });
+      }
+    });
+
+    return subjectDates;
+  };
+
+  // Fetch dates for the selected subject based on the current month
+  const fetchDatesForSubject = async (subject) => {
     if (!subject) return;
-
     try {
       const token = localStorage.getItem("token");
 
@@ -109,26 +104,38 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         { headers: { "auth-token": token } }
       );
 
-      // Map attendance records to a dictionary with ISO date keys
       const markedDates = attendanceResponse.data.reduce((acc, record) => {
         const isoDate = new Date(record.date).toISOString().split("T")[0];
-        acc[isoDate] = record.status; // Store status ("present" or "absent")
+        acc[isoDate] = record.status; 
         return acc;
       }, {});
 
-      // Filter timetable entries for this subject
       const subjectEntries = timetable.filter(
         (entry) => entry.subject === subject
       );
 
-      // Generate dates based on timetable and attendance records
-      const generatedDates = generateDatesForSubject(subjectEntries, markedDates);
+      // Generate dates based on timetable and attendance records for the currentDate
+      const generatedDates = generateDatesForSubject(subjectEntries, markedDates, currentDate);
       setDates(generatedDates);
     } catch (error) {
       console.error("Error fetching dates:", error);
       showalert("Error fetching dates.", "danger");
     }
   };
+
+  const handleSubjectChange = async (e) => {
+    const subject = e.target.value;
+    setSelectedSubject(subject);
+    setAttendance({});
+    await fetchDatesForSubject(subject);
+  };
+
+  // Update dates when currentDate (month) changes and a subject is selected
+  useEffect(() => {
+    if (selectedSubject) {
+      fetchDatesForSubject(selectedSubject);
+    }
+  }, [currentDate]);
 
   // Toggle attendance status between "present", "absent", and null
   const toggleStatus = (date) => {
@@ -163,6 +170,26 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
       console.error("Error marking attendance:", error);
       showalert("Error marking attendance.", "danger");
     }
+  };
+
+  // Handlers for navigating months
+  const handlePrevMonth = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+      return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+      return newDate;
+    });
+  };
+
+  // Format current month for display (e.g., "March 2025")
+  const formatMonthDisplay = (date) => {
+    return date.toLocaleString("default", { month: "long", year: "numeric" });
   };
 
   return (
@@ -202,13 +229,27 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         </select>
       </div>
 
+      {/* Month Navigation Arrows */}
+      <div className="d-flex justify-content-center align-items-center mb-3">
+        <button className="btn btn-outline-secondary me-2" onClick={handlePrevMonth}>
+          ← Previous Month
+        </button>
+        <span>{formatMonthDisplay(currentDate)}</span>
+        <button className="btn btn-outline-secondary ms-2" onClick={handleNextMonth}>
+          Next Month →
+        </button>
+      </div>
+
       {/* Dates Checkboxes */}
       {dates.length > 0 && (
         <div>
           <h5>Mark Attendance</h5>
           <ul className="list-group">
             {dates.map(({ date, status }) => (
-              <li key={date} className="list-group-item d-flex justify-content-between align-items-center">
+              <li
+                key={date}
+                className="list-group-item d-flex justify-content-between align-items-center"
+              >
                 <span>{date}</span>
                 <span>
                   {status === "present" && (

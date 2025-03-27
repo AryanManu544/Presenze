@@ -26,12 +26,13 @@ const Login = ({ mode, showalert }) => {
       setCredentials(JSON.parse(savedCreds));
     }
   }, [mode]);
-
+  
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCredentials({
       ...credentials,
       [name]: type === "checkbox" ? checked : value,
+      
     });
   };
 
