@@ -7,7 +7,16 @@ const crypto = require("crypto");
 const User = require("../models/User"); // Your User model
 const router = express.Router();
 const JWT_SECRET = "Splendid_Ganesha"; // Ideally store this in an .env file
+const nodemailer = require("nodemailer");
 
+//Configuring nodemailer to make the forward password functionality
+let transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 // ROUTE: Create a user using POST "/api/auth/createuser" - No login required
 router.post(
   "/createuser",
@@ -110,11 +119,28 @@ router.post(
       user.resetTokenExpiration = resetTokenExpiration;
       await user.save();
 
-      // TODO: In production, send this link via email.
+      // Construct the reset link
       const resetLink = `http://yourdomain.com/resetpassword?token=${resetToken}`;
-      console.log(`Password reset link (send this via email): ${resetLink}`);
 
-      res.json({ message: "Password reset link sent to email" });
+      // Define the email options
+      const mailOptions = {
+        from: '"Your App Name" <no-reply@yourdomain.com>', // sender address
+        to: email, // recipient address
+        subject: "Password Reset Request",
+        text: `You requested a password reset. Click on the link to reset your password: ${resetLink}\n\nIf you did not request this, please ignore this email.`,
+        // You can also add html if you prefer:
+        // html: `<p>You requested a password reset.</p><p>Click <a href="${resetLink}">here</a> to reset your password.</p>`,
+      };
+
+      // Send the email
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+          console.error("Error sending email:", err);
+          return res.status(500).json({ error: "Error sending password reset email" });
+        }
+        console.log("Password reset email sent:", info.response);
+        res.json({ message: "Password reset link sent to email" });
+      });
     } catch (error) {
       console.error("Error in /forgotpassword:", error);
       res.status(500).json({ error: "Server error" });
