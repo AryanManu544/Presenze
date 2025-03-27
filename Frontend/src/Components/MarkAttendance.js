@@ -36,7 +36,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     };
 
     fetchTimetable();
-  }, [API_BASE_URL, showalert]);
+  }, [fetchDatesForSubject, selectedSubject,API_BASE_URL, showalert]);
 
   // Helper function to format a date as YYYY-MM-DD in local time
   const formatDate = (date) => {
