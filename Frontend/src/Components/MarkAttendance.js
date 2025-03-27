@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 const MarkMonthlyAttendance = ({ mode, showalert }) => {
@@ -14,6 +14,99 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
 
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+
+  // Helper function to format a date as YYYY-MM-DD in local time
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const getDayIndex = (dayName) => {
+    const daysOfWeek = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    return daysOfWeek.indexOf(dayName);
+  };
+
+  // Generate dates for a subject given the subject entries, marked dates, and a target month (via currentDate)
+  const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth();
+    const subjectDates = [];
+
+    subjectEntries.forEach((entry) => {
+      const dayOfWeek = entry.day;
+
+      // Find the first occurrence of this weekday in the target month
+      let firstDayOfMonth = new Date(year, month, 1);
+      while (
+        firstDayOfMonth.getMonth() === month &&
+        firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)
+      ) {
+        firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
+      }
+
+      // Generate all occurrences of this weekday in the target month
+      for (
+        let date = new Date(firstDayOfMonth);
+        date.getMonth() === month;
+        date.setDate(date.getDate() + 7)
+      ) {
+        const formattedDate = formatDate(date);
+        subjectDates.push({
+          date: formattedDate,
+          status: markedDates[formattedDate] || null,
+        });
+      }
+    });
+
+    return subjectDates;
+  };
+
+  // Wrap fetchDatesForSubject in useCallback to memoize the function
+  const fetchDatesForSubject = useCallback(
+    async (subject) => {
+      if (!subject) return;
+      try {
+        const token = localStorage.getItem("token");
+        // Fetch attendance records for the selected subject
+        const attendanceResponse = await axios.get(
+          `${API_BASE_URL}/api/attendance/view/${subject}`,
+          { headers: { "auth-token": token } }
+        );
+
+        const markedDates = attendanceResponse.data.reduce((acc, record) => {
+          const isoDate = new Date(record.date).toISOString().split("T")[0];
+          acc[isoDate] = record.status;
+          return acc;
+        }, {});
+
+        const subjectEntries = timetable.filter(
+          (entry) => entry.subject === subject
+        );
+
+        // Generate dates based on timetable and attendance records for the currentDate
+        const generatedDates = generateDatesForSubject(
+          subjectEntries,
+          markedDates,
+          currentDate
+        );
+        setDates(generatedDates);
+      } catch (error) {
+        console.error("Error fetching dates:", error);
+        showalert("Error fetching dates.", "danger");
+      }
+    },
+    [API_BASE_URL, currentDate, showalert, timetable]
+  );
 
   // Fetch timetable and subjects on mount
   useEffect(() => {
@@ -36,92 +129,14 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     };
 
     fetchTimetable();
-  }, [fetchDatesForSubject, selectedSubject,API_BASE_URL, showalert]);
+  }, [API_BASE_URL, showalert]);
 
-  // Helper function to format a date as YYYY-MM-DD in local time
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0"); 
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  const getDayIndex = (dayName) => {
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return daysOfWeek.indexOf(dayName);
-  };
-
-  // Generate dates for a subject given the subject entries, marked dates, and a target month (via currentDate)
-  const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
-    const year = targetDate.getFullYear();
-    const month = targetDate.getMonth();
-
-    const subjectDates = [];
-
-    subjectEntries.forEach((entry) => {
-      const dayOfWeek = entry.day; 
-
-      // Find the first occurrence of this weekday in the target month
-      let firstDayOfMonth = new Date(year, month, 1);
-      while (firstDayOfMonth.getMonth() === month && firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)) {
-        firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
-      }
-
-      // Generate all occurrences of this weekday in the target month
-      for (
-        let date = new Date(firstDayOfMonth);
-        date.getMonth() === month;
-        date.setDate(date.getDate() + 7)
-      ) {
-        const formattedDate = formatDate(date);
-        subjectDates.push({
-          date: formattedDate,
-          status: markedDates[formattedDate] || null, 
-        });
-      }
-    });
-
-    return subjectDates;
-  };
-
-  // Fetch dates for the selected subject based on the current month
-  const fetchDatesForSubject = async (subject) => {
-    if (!subject) return;
-    try {
-      const token = localStorage.getItem("token");
-
-      // Fetch attendance records for the selected subject
-      const attendanceResponse = await axios.get(
-        `${API_BASE_URL}/api/attendance/view/${subject}`,
-        { headers: { "auth-token": token } }
-      );
-
-      const markedDates = attendanceResponse.data.reduce((acc, record) => {
-        const isoDate = new Date(record.date).toISOString().split("T")[0];
-        acc[isoDate] = record.status; 
-        return acc;
-      }, {});
-
-      const subjectEntries = timetable.filter(
-        (entry) => entry.subject === subject
-      );
-
-      // Generate dates based on timetable and attendance records for the currentDate
-      const generatedDates = generateDatesForSubject(subjectEntries, markedDates, currentDate);
-      setDates(generatedDates);
-    } catch (error) {
-      console.error("Error fetching dates:", error);
-      showalert("Error fetching dates.", "danger");
+  // Fetch dates for the selected subject when currentDate or selectedSubject changes
+  useEffect(() => {
+    if (selectedSubject) {
+      fetchDatesForSubject(selectedSubject);
     }
-  };
+  }, [currentDate, fetchDatesForSubject, selectedSubject]);
 
   const handleSubjectChange = async (e) => {
     const subject = e.target.value;
@@ -129,13 +144,6 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     setAttendance({});
     await fetchDatesForSubject(subject);
   };
-
-  // Update dates when currentDate (month) changes and a subject is selected
-  useEffect(() => {
-    if (selectedSubject) {
-      fetchDatesForSubject(selectedSubject);
-    }
-  }, [currentDate]);
 
   // Toggle attendance status between "present", "absent", and null
   const toggleStatus = (date) => {
