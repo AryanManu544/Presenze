@@ -1,6 +1,61 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
+// Helper function: Format a date as YYYY-MM-DD in local time.
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Returns the index of the weekday.
+const getDayIndex = (dayName) => {
+  const daysOfWeek = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  return daysOfWeek.indexOf(dayName);
+};
+
+// Generate dates for a subject given subject entries, marked dates, and a target month.
+const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
+  const year = targetDate.getFullYear();
+  const month = targetDate.getMonth();
+  const subjectDates = [];
+
+  subjectEntries.forEach((entry) => {
+    const dayOfWeek = entry.day;
+    // Find the first occurrence of this weekday in the target month.
+    let firstDayOfMonth = new Date(year, month, 1);
+    while (
+      firstDayOfMonth.getMonth() === month &&
+      firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)
+    ) {
+      firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
+    }
+    // Generate all occurrences of this weekday in the target month.
+    for (
+      let date = new Date(firstDayOfMonth);
+      date.getMonth() === month;
+      date.setDate(date.getDate() + 7)
+    ) {
+      const formattedDate = formatDate(date);
+      subjectDates.push({
+        date: formattedDate,
+        status: markedDates[formattedDate] || null,
+      });
+    }
+  });
+
+  return subjectDates;
+};
+
 const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const [subjects, setSubjects] = useState([]); // List of subjects
   const [selectedSubject, setSelectedSubject] = useState(""); // Selected subject
@@ -12,63 +67,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-  // Helper function: Format a date as YYYY-MM-DD in local time.
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  // Returns the index of the weekday.
-  const getDayIndex = (dayName) => {
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return daysOfWeek.indexOf(dayName);
-  };
-
-  // Line 37: Generate dates for a subject given subject entries, marked dates, and a target month.
-  const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
-    const year = targetDate.getFullYear();
-    const month = targetDate.getMonth();
-    const subjectDates = [];
-
-    subjectEntries.forEach((entry) => {
-      const dayOfWeek = entry.day;
-      // Find the first occurrence of this weekday in the target month
-      let firstDayOfMonth = new Date(year, month, 1);
-      while (
-        firstDayOfMonth.getMonth() === month &&
-        firstDayOfMonth.getDay() !== getDayIndex(dayOfWeek)
-      ) {
-        firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
-      }
-      // Generate all occurrences of this weekday in the target month.
-      for (
-        let date = new Date(firstDayOfMonth);
-        date.getMonth() === month;
-        date.setDate(date.getDate() + 7)
-      ) {
-        const formattedDate = formatDate(date);
-        subjectDates.push({
-          date: formattedDate,
-          status: markedDates[formattedDate] || null,
-        });
-      }
-    });
-
-    return subjectDates;
-  };
-
-  // Fetch attendance dates for a selected subject.
-  // Line 106: useCallback now includes generateDatesForSubject in its dependency array.
+  // Memoized function to fetch dates for a subject.
   const fetchDatesForSubject = useCallback(
     async (subject) => {
       if (!subject) return;
@@ -102,7 +101,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         showalert("Error fetching dates.", "danger");
       }
     },
-    [API_BASE_URL, currentDate, showalert, timetable, generateDatesForSubject]
+    [API_BASE_URL, currentDate, showalert, timetable] // Note: generateDatesForSubject is now a stable external function.
   );
 
   // Fetch timetable and subjects on component mount.
@@ -179,11 +178,15 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
 
   // Handlers for navigating months.
   const handlePrevMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+    );
   };
 
   const handleNextMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+    );
   };
 
   // Format current month for display (e.g., "March 2025").
@@ -230,11 +233,17 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
 
       {/* Month Navigation */}
       <div className="d-flex justify-content-center align-items-center mb-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handlePrevMonth}>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handlePrevMonth}
+        >
           ← Previous Month
         </button>
         <span>{formatMonthDisplay(currentDate)}</span>
-        <button className="btn btn-outline-secondary ms-2" onClick={handleNextMonth}>
+        <button
+          className="btn btn-outline-secondary ms-2"
+          onClick={handleNextMonth}
+        >
           Next Month →
         </button>
       </div>
@@ -252,17 +261,23 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
                 <span>{date}</span>
                 <span>
                   {status === "present" && (
-                    <span style={{ color: "green", marginRight: "10px" }}>
+                    <span
+                      style={{ color: "green", marginRight: "10px" }}
+                    >
                       ✅ Present
                     </span>
                   )}
                   {status === "absent" && (
-                    <span style={{ color: "red", marginRight: "10px" }}>
+                    <span
+                      style={{ color: "red", marginRight: "10px" }}
+                    >
                       ❌ Absent
                     </span>
                   )}
                   {!status && (
-                    <span style={{ color: "#888", marginRight: "10px" }}>
+                    <span
+                      style={{ color: "#888", marginRight: "10px" }}
+                    >
                       ⬜ Not Marked
                     </span>
                   )}
