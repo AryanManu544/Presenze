@@ -4,7 +4,7 @@ import axios from "axios";
 const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const [subjects, setSubjects] = useState([]); // List of subjects
   const [selectedSubject, setSelectedSubject] = useState(""); // Selected subject
-  const [dates, setDates] = useState([]); // Dates of the selected subject
+  const [dates, setDates] = useState([]); // Dates for the selected subject
   const [attendance, setAttendance] = useState({}); // Attendance state
   const [timetable, setTimetable] = useState([]); // Timetable data
   const [currentDate, setCurrentDate] = useState(new Date()); // Current date for month view
@@ -12,7 +12,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-  // Helper function to format a date as YYYY-MM-DD in local time
+  // Helper function: Format a date as YYYY-MM-DD in local time.
   const formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -20,6 +20,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return `${year}-${month}-${day}`;
   };
 
+  // Returns the index of the weekday.
   const getDayIndex = (dayName) => {
     const daysOfWeek = [
       "Sunday",
@@ -33,7 +34,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return daysOfWeek.indexOf(dayName);
   };
 
-  // Generate dates for a subject given subject entries, marked dates, and a target month
+  // Line 37: Generate dates for a subject given subject entries, marked dates, and a target month.
   const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
     const year = targetDate.getFullYear();
     const month = targetDate.getMonth();
@@ -41,7 +42,6 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
 
     subjectEntries.forEach((entry) => {
       const dayOfWeek = entry.day;
-
       // Find the first occurrence of this weekday in the target month
       let firstDayOfMonth = new Date(year, month, 1);
       while (
@@ -50,8 +50,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
       ) {
         firstDayOfMonth.setDate(firstDayOfMonth.getDate() + 1);
       }
-
-      // Generate all occurrences of this weekday in the target month
+      // Generate all occurrences of this weekday in the target month.
       for (
         let date = new Date(firstDayOfMonth);
         date.getMonth() === month;
@@ -68,14 +67,14 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return subjectDates;
   };
 
-  // Memoized function to fetch dates for a subject.
-  // Note: We include generateDatesForSubject in the dependency array.
+  // Fetch attendance dates for a selected subject.
+  // Line 106: useCallback now includes generateDatesForSubject in its dependency array.
   const fetchDatesForSubject = useCallback(
     async (subject) => {
       if (!subject) return;
       try {
         const token = localStorage.getItem("token");
-        // Fetch attendance records for the selected subject
+        // Fetch attendance records for the selected subject.
         const attendanceResponse = await axios.get(
           `${API_BASE_URL}/api/attendance/view/${subject}`,
           { headers: { "auth-token": token } }
@@ -91,7 +90,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
           (entry) => entry.subject === subject
         );
 
-        // Generate dates based on timetable and attendance records for the currentDate
+        // Generate dates based on timetable and attendance records for the currentDate.
         const generatedDates = generateDatesForSubject(
           subjectEntries,
           markedDates,
@@ -106,7 +105,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     [API_BASE_URL, currentDate, showalert, timetable, generateDatesForSubject]
   );
 
-  // Fetch timetable and subjects on mount
+  // Fetch timetable and subjects on component mount.
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
@@ -129,7 +128,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     fetchTimetable();
   }, [API_BASE_URL, showalert]);
 
-  // Fetch dates for the selected subject when currentDate or selectedSubject changes
+  // Fetch dates for the selected subject when currentDate or selectedSubject changes.
   useEffect(() => {
     if (selectedSubject) {
       fetchDatesForSubject(selectedSubject);
@@ -143,7 +142,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     await fetchDatesForSubject(subject);
   };
 
-  // Toggle attendance status between "present", "absent", and null
+  // Toggle attendance status between "present", "absent", and null.
   const toggleStatus = (date) => {
     setAttendance((prev) => ({
       ...prev,
@@ -156,7 +155,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     }));
   };
 
-  // Submit marked attendance
+  // Submit marked attendance.
   const handleSubmit = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -178,20 +177,16 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     }
   };
 
-  // Handlers for navigating months
+  // Handlers for navigating months.
   const handlePrevMonth = () => {
-    setCurrentDate((prev) => {
-      return new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
-    });
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate((prev) => {
-      return new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
-    });
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  // Format current month for display (e.g., "March 2025")
+  // Format current month for display (e.g., "March 2025").
   const formatMonthDisplay = (date) => {
     return date.toLocaleString("default", { month: "long", year: "numeric" });
   };
@@ -233,7 +228,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         </select>
       </div>
 
-      {/* Month Navigation Arrows */}
+      {/* Month Navigation */}
       <div className="d-flex justify-content-center align-items-center mb-3">
         <button className="btn btn-outline-secondary me-2" onClick={handlePrevMonth}>
           ← Previous Month
@@ -244,7 +239,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         </button>
       </div>
 
-      {/* Dates Checkboxes */}
+      {/* Attendance Dates */}
       {dates.length > 0 && (
         <div>
           <h5>Mark Attendance</h5>
@@ -282,10 +277,10 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
                     onClick={() => toggleStatus(date)}
                   >
                     {attendance[date] === "present" || status === "present"
-                      ? `✅`
+                      ? "✅"
                       : attendance[date] === "absent" || status === "absent"
-                      ? `❌`
-                      : `Mark`}
+                      ? "❌"
+                      : "Mark"}
                   </button>
                 </span>
               </li>
