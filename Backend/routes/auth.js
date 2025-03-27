@@ -120,7 +120,7 @@ router.post(
       await user.save();
 
       // Construct the reset link
-      const resetLink = `http://yourdomain.com/resetpassword?token=${resetToken}`;
+      const resetLink = `https://presenze-plum.netlify.app/resetpassword?token=${resetToken}`;
 
       // Define the email options
       const mailOptions = {
