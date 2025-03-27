@@ -7,10 +7,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
   const [dates, setDates] = useState([]); // Dates of the selected subject
   const [attendance, setAttendance] = useState({}); // Attendance state
   const [timetable, setTimetable] = useState([]); // Timetable data
-
-  // State to keep track of the currently viewed month.
-  // Initialize with the current date.
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date()); // Current date for month view
 
   const API_BASE_URL =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
@@ -36,7 +33,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return daysOfWeek.indexOf(dayName);
   };
 
-  // Generate dates for a subject given the subject entries, marked dates, and a target month (via currentDate)
+  // Generate dates for a subject given subject entries, marked dates, and a target month
   const generateDatesForSubject = (subjectEntries, markedDates, targetDate) => {
     const year = targetDate.getFullYear();
     const month = targetDate.getMonth();
@@ -71,7 +68,8 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     return subjectDates;
   };
 
-  // Wrap fetchDatesForSubject in useCallback to memoize the function
+  // Memoized function to fetch dates for a subject.
+  // Note: We include generateDatesForSubject in the dependency array.
   const fetchDatesForSubject = useCallback(
     async (subject) => {
       if (!subject) return;
@@ -105,7 +103,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         showalert("Error fetching dates.", "danger");
       }
     },
-    [API_BASE_URL, currentDate, showalert, timetable]
+    [API_BASE_URL, currentDate, showalert, timetable, generateDatesForSubject]
   );
 
   // Fetch timetable and subjects on mount
@@ -183,15 +181,13 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
   // Handlers for navigating months
   const handlePrevMonth = () => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
-      return newDate;
+      return new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
     });
   };
 
   const handleNextMonth = () => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
-      return newDate;
+      return new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
     });
   };
 
