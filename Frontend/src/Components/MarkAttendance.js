@@ -189,6 +189,11 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
     );
   };
 
+  const today = new Date();
+  const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+  const disableNextMonth = (nextMonth.getFullYear() === today.getFullYear() && nextMonth.getMonth() > today.getMonth());
+
+
   // Format current month for display (e.g., "March 2025").
   const formatMonthDisplay = (date) => {
     return date.toLocaleString("default", { month: "long", year: "numeric" });
@@ -243,6 +248,7 @@ const MarkMonthlyAttendance = ({ mode, showalert }) => {
         <button
           className="btn btn-outline-secondary ms-2"
           onClick={handleNextMonth}
+          disabled={disableNextMonth}
         >
           Next Month →
         </button>
