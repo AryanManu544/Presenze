@@ -7,7 +7,7 @@ body {
   
   /* Container (Card) */
   .container {
-    width: 25vw;
+    width: 40vw !important;
     min-width: 300px;
     max-width: 400px;        
     margin: 4rem auto;       
