@@ -79,7 +79,7 @@ const Login = ({ mode, showalert }) => {
   };
 
   return (
-    <div className={`container ${mode === "dark" ? "dark" : "light"}`}>
+    <div className={`login-container ${mode === "dark" ? "dark" : "light"}`}>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
         <div>
