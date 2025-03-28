@@ -3,12 +3,22 @@ import { useNavigate, Link } from "react-router-dom";
 import "../styles/login.css";
 
 const Signup = ({ mode, showalert }) => {
-  const [credentials, setCredentials] = useState({ name: "", email: "", password: "", cpassword: "" });
+  const [credentials, setCredentials] = useState({
+    name: "",
+    email: "",
+    password: "",
+    cpassword: "",
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     document.body.setAttribute("data-theme", mode);
-    const backgroundImage = mode === "dark" ? "/assets/darkmode.jpg" : "/assets/lightmode.jpg";
+
+    const backgroundImage =
+      mode === "dark"
+        ? "/assets/darkmode.jpg"
+        : "/assets/lightmode.jpg";
+
     document.body.style.backgroundImage = `url(${backgroundImage})`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
@@ -27,15 +37,18 @@ const Signup = ({ mode, showalert }) => {
       showalert("Passwords do not match", "danger");
       return;
     }
+
+    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+    const { name, email, password } = credentials;
+
     try {
-      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
-      const { name, email, password } = credentials;
       const response = await fetch(`${API_BASE_URL}/api/auth/createuser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
       const json = await response.json();
+
       if (json.authtoken) {
         localStorage.setItem("token", json.authtoken);
         showalert("Account created successfully", "success");
@@ -58,9 +71,9 @@ const Signup = ({ mode, showalert }) => {
           <input
             type="text"
             name="name"
+            id="name"
             value={credentials.name}
             onChange={onChange}
-            id="name"
           />
         </div>
         <div>
@@ -68,9 +81,9 @@ const Signup = ({ mode, showalert }) => {
           <input
             type="email"
             name="email"
+            id="email"
             value={credentials.email}
             onChange={onChange}
-            id="email"
           />
         </div>
         <div>
@@ -78,9 +91,9 @@ const Signup = ({ mode, showalert }) => {
           <input
             type="password"
             name="password"
+            id="password"
             value={credentials.password}
             onChange={onChange}
-            id="password"
           />
         </div>
         <div>
@@ -88,13 +101,15 @@ const Signup = ({ mode, showalert }) => {
           <input
             type="password"
             name="cpassword"
+            id="cpassword"
             value={credentials.cpassword}
             onChange={onChange}
-            id="cpassword"
           />
         </div>
+
         <button type="submit">Sign Up</button>
       </form>
+
       <div className="text-center">
         Already have an account? <Link to="/login">Login</Link>
       </div>

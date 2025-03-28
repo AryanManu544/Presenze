@@ -39,7 +39,7 @@ const ForgotPassword = ({ mode, showalert }) => {
         backgroundColor: mode === "dark" ? "#222222cc" : "#ffffffcc",
       }}
     >
-      <h2 className="text-center">Forgot Password</h2>
+      <h1 className="text-center">Forgot Password</h1>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="email" className="form-label">
