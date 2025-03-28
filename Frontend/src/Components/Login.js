@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import "../styles/login.css";
 
 const Login = ({ mode, showalert }) => {
   const [credentials, setCredentials] = useState({
@@ -9,7 +10,6 @@ const Login = ({ mode, showalert }) => {
   });
   const navigate = useNavigate();
 
-  // On mount, load saved credentials (if any)
   useEffect(() => {
     document.body.setAttribute("data-theme", mode);
     const backgroundImage = mode === "dark" ? "/assets/darkmode.jpg" : "/assets/lightmode.jpg";
@@ -26,13 +26,12 @@ const Login = ({ mode, showalert }) => {
       setCredentials(JSON.parse(savedCreds));
     }
   }, [mode]);
-  
+
   const onChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCredentials({
       ...credentials,
       [name]: type === "checkbox" ? checked : value,
-      
     });
   };
 
@@ -49,10 +48,8 @@ const Login = ({ mode, showalert }) => {
 
       const json = await response.json();
       if (json.authtoken) {
-        // Save token in storage
         if (credentials.remember) {
           localStorage.setItem("token", json.authtoken);
-          // Also store credentials (email and password) for pre-filling
           localStorage.setItem("loginCreds", JSON.stringify({
             email: credentials.email,
             password: credentials.password,
@@ -74,65 +71,45 @@ const Login = ({ mode, showalert }) => {
   };
 
   return (
-    <div
-      className={`container ${mode === "dark" ? "text-light" : ""}`}
-      style={{
-        maxWidth: "400px",
-        margin: "4rem auto",
-        padding: "1rem",
-        borderRadius: "8px",
-        backgroundColor: mode === "dark" ? "#222222cc" : "#ffffffcc",
-        boxShadow:
-          mode === "dark"
-            ? "0px 4px 10px rgba(0,0,0,0.8)"
-            : "0px 4px 10px rgba(0,0,0,0.2)",
-      }}
-    >
-      <h2 className="text-center">Login</h2>
+    <div className={`container ${mode === "dark" ? "dark" : "light"}`}>
+      <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">Email address</label>
+        <div>
+          <label htmlFor="email">Email address</label>
           <input
             type="email"
-            className="form-control"
             name="email"
             value={credentials.email}
             onChange={onChange}
             id="email"
-            style={mode === "dark" ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" } : {}}
           />
         </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label">Password</label>
+        <div>
+          <label htmlFor="password">Password</label>
           <input
             type="password"
-            className="form-control"
             name="password"
             value={credentials.password}
             onChange={onChange}
             id="password"
-            style={mode === "dark" ? { backgroundColor: "#222222", color: "#ffffff", borderColor: "#444" } : {}}
           />
         </div>
-        <button type="submit" className="btn btn-outline-primary w-100">Sign In</button>
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div className="form-check">
+        <button type="submit">Sign In</button>
+        <div className="remember-forgot">
+          <div>
             <input
               type="checkbox"
-              className="form-check-input"
               name="remember"
               id="remember"
               checked={credentials.remember}
               onChange={onChange}
             />
-            <label className="form-check-label" htmlFor="remember">Remember Me</label>
+            <label htmlFor="remember">Remember Me</label>
           </div>
-          <div>
-            <Link to="/forgotpassword">Forgot Password?</Link>
-          </div>
+          <Link to="/forgotpassword">Forgot Password?</Link>
         </div>
       </form>
-      <div className="text-center mt-3">
+      <div className="text-center">
         Don't have an account? <Link to="/signup">Sign up</Link>
       </div>
     </div>

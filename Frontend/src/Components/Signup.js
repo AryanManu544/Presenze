@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import "../styles/login.css";
 
 const Signup = ({ mode, showalert }) => {
   const [credentials, setCredentials] = useState({ name: "", email: "", password: "", cpassword: "" });
@@ -7,29 +8,13 @@ const Signup = ({ mode, showalert }) => {
 
   useEffect(() => {
     document.body.setAttribute("data-theme", mode);
-
-    // Set background image on the body
-    const backgroundImage =
-      mode === "dark"
-        ? "/assets/darkmode.jpg"
-        : "/assets/lightmode.jpg";
-
+    const backgroundImage = mode === "dark" ? "/assets/darkmode.jpg" : "/assets/lightmode.jpg";
     document.body.style.backgroundImage = `url(${backgroundImage})`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
     document.body.style.backgroundRepeat = "no-repeat";
-    document.body.style.height = "100vh"; 
-    document.body.style.margin = "0"; 
-
-    /*return () => {
-      // Clean up styles on component unmount
-      document.body.style.backgroundImage = "";
-      document.body.style.backgroundSize = "";
-      document.body.style.backgroundPosition = "";
-      document.body.style.backgroundRepeat = "";
-      document.body.style.height = "";
-      document.body.style.margin = "";
-    };*/
+    document.body.style.height = "100vh";
+    document.body.style.margin = "0";
   }, [mode]);
 
   const onChange = (e) => {
@@ -65,42 +50,52 @@ const Signup = ({ mode, showalert }) => {
   };
 
   return (
-    <div
-      className={`container ${mode === 'dark' ? 'text-light' : ''}`}
-      style={{
-        maxWidth: "400px",
-        margin: "4rem auto",
-        padding: "1rem",
-        borderRadius: "8px",
-        backgroundColor: mode === 'dark' ? "#222222cc" : "#ffffffcc", // Semi-transparent card
-        boxShadow:
-          mode === 'dark'
-            ? "0px 4px 10px rgba(0,0,0,0.8)"
-            : "0px 4px 10px rgba(0,0,0,0.2)",
-      }}
-    >
-      <h2 className="text-center">Sign Up</h2>
+    <div className={`container ${mode === "dark" ? "dark" : "light"}`}>
+      <h2>Sign Up</h2>
       <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="name" className="form-label">Name</label>
-          <input type="text" className="form-control" name="name" value={credentials.name} onChange={onChange} id="name" />
+        <div>
+          <label htmlFor="name">Name</label>
+          <input
+            type="text"
+            name="name"
+            value={credentials.name}
+            onChange={onChange}
+            id="name"
+          />
         </div>
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">Email address</label>
-          <input type="email" className="form-control" name="email" value={credentials.email} onChange={onChange} id="email" />
-          <div className="form-text">We'll never share your email with anyone else.</div>
+        <div>
+          <label htmlFor="email">Email address</label>
+          <input
+            type="email"
+            name="email"
+            value={credentials.email}
+            onChange={onChange}
+            id="email"
+          />
         </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label">Password</label>
-          <input type="password" className="form-control" name="password" value={credentials.password} onChange={onChange} id="password" />
+        <div>
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            name="password"
+            value={credentials.password}
+            onChange={onChange}
+            id="password"
+          />
         </div>
-        <div className="mb-3">
-          <label htmlFor="cpassword" className="form-label">Confirm Password</label>
-          <input type="password" className="form-control" name="cpassword" value={credentials.cpassword} onChange={onChange} id="cpassword" />
+        <div>
+          <label htmlFor="cpassword">Confirm Password</label>
+          <input
+            type="password"
+            name="cpassword"
+            value={credentials.cpassword}
+            onChange={onChange}
+            id="cpassword"
+          />
         </div>
-        <button type="submit" className="btn btn-outline-primary w-100">Sign Up</button>
+        <button type="submit">Sign Up</button>
       </form>
-      <div className="text-center mt-3">
+      <div className="text-center">
         Already have an account? <Link to="/login">Login</Link>
       </div>
     </div>
