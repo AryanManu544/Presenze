@@ -26,11 +26,11 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSaveSucces
     };
 
     try {
-      const response = await fetch(`/api/attendance/edit/${attendanceRecord._id}`, {
+      const response = await fetch(`https://attendance-tracker-rp7u.onrender.com/api/attendance/edit/${attendanceRecord._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'auth-token': localStorage.getItem('token'), // Adjust if you use a different auth method
+          'auth-token': localStorage.getItem('token'), // Adjust if you're not using auth
         },
         body: JSON.stringify(updatedRecord),
       });
@@ -38,10 +38,11 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSaveSucces
       if (response.ok) {
         const data = await response.json();
         console.log("Attendance updated:", data);
-        if (onSaveSuccess) onSaveSuccess(); // Optional: trigger parent to refresh list
+        if (onSaveSuccess) onSaveSuccess(); // Refresh parent list if needed
         handleClose();
       } else {
-        console.error("Failed to update attendance");
+        const errorText = await response.text();
+        console.error("Failed to update attendance:", errorText);
       }
     } catch (error) {
       console.error("Error during update:", error);
