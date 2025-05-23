@@ -30,7 +30,7 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSaveSucces
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'auth-token': localStorage.getItem('token'), // Adjust if you're not using auth
+          'auth-token': localStorage.getItem('token'),
         },
         body: JSON.stringify(updatedRecord),
       });
@@ -38,7 +38,7 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSaveSucces
       if (response.ok) {
         const data = await response.json();
         console.log("Attendance updated:", data);
-        if (onSaveSuccess) onSaveSuccess(); // Refresh parent list if needed
+        if (onSaveSuccess) onSaveSuccess(data);
         handleClose();
       } else {
         const errorText = await response.text();
