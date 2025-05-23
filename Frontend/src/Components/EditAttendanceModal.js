@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
-const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSave, mode }) => {
+const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSaveSuccess, mode }) => {
   const [className, setClassName] = useState('');
   const [status, setStatus] = useState('');
 
@@ -12,11 +12,40 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSave, mode
     }
   }, [attendanceRecord]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const updatedRecord = { ...attendanceRecord, className, status };
-    onSave(updatedRecord);
-    handleClose();
+
+    if (!attendanceRecord || !attendanceRecord._id) {
+      console.error("Invalid attendance record");
+      return;
+    }
+
+    const updatedRecord = {
+      className,
+      status,
+    };
+
+    try {
+      const response = await fetch(`/api/attendance/edit/${attendanceRecord._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'auth-token': localStorage.getItem('token'), // Adjust if you use a different auth method
+        },
+        body: JSON.stringify(updatedRecord),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Attendance updated:", data);
+        if (onSaveSuccess) onSaveSuccess(); // Optional: trigger parent to refresh list
+        handleClose();
+      } else {
+        console.error("Failed to update attendance");
+      }
+    } catch (error) {
+      console.error("Error during update:", error);
+    }
   };
 
   const inputStyle = mode === 'dark' 
@@ -62,7 +91,7 @@ const EditAttendanceModal = ({ show, handleClose, attendanceRecord, onSave, mode
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" className='btn btn-danger' onClick={handleClose}>
+          <Button variant="secondary" className="btn btn-danger" onClick={handleClose}>
             Cancel
           </Button>
           <Button variant="primary" type="submit">
